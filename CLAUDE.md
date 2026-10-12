@@ -109,14 +109,21 @@ que esto es un problema del build local nada más: no hay nada que arreglar ahí
   anteriores a su llegada y le daba al pagador más de lo que gastó. El arreglo
   vive en la misma `0010_reparto_parejo.sql`. Si tocás esas vistas, no saques la
   condición de fecha.
-- **Identidad visual: oscura y eléctrica, nada cálido.** Los colores viven en
-  `:root` de `src/styles.css`. Dos de ellos significan plata y no se reusan para
-  otra cosa: **menta = te deben, rosa (`--alerta`) = debés**, y la tarjeta
-  grande de saldo cambia de color según eso. `--marca` (violeta) es solo la
-  marca; lo urgente o negativo usa `--alerta`. Los colores de las categorías de
-  fábrica están en `RUBROS` (`src/lib/gastos`) y en la migración 0012: si
-  cambia uno, cambia el otro. La barra del sistema y la PWA tienen el color
-  repetido en `index.html` y `manifest.webmanifest`.
+- **Paletas de colores, elegibles por celular.** Hay siete (Eléctrico, Océano,
+  Lima, Noche, Claro, Marea, Kiwi). La de fábrica, Eléctrico, vive en `:root` de
+  `src/styles.css`; cada una de las otras es un bloque `html[data-tema="..."]`
+  que pisa solo lo que cambia. El nombre, las muestras y el color de la barra
+  del sistema están en `src/lib/temas.js`; la elección se guarda en
+  `localStorage` (`dbd:tema`) y un script en `index.html` la aplica antes de
+  que cargue React, para que no parpadee. Se cambia desde Resumen → Colores.
+  **Si agregás un token de color a `:root`, revisá que las paletas claras lo
+  pisen**: lo que se ve bien sobre fondo oscuro suele no alcanzar sobre claro.
+- **Dos colores significan plata y no se reusan para otra cosa:** el verde/menta
+  es "te deben" y el de alerta es "debés". La tarjeta grande de saldo cambia de
+  color según eso (`--grad-favor`, `--grad-debo`). `--marca` es solo la marca;
+  lo urgente o negativo usa `--alerta`. Los colores de las categorías de fábrica
+  están en `RUBROS` (`src/lib/gastos`) y en la migración 0012: si cambia uno,
+  cambia el otro. El color de la PWA está repetido en `manifest.webmanifest`.
 - **Cada gasto dice quién le debe a quién.** `efectoEnMi()` (con tests) saca de
   cada fila "Eve te debe $X" o "Le debés $X a Eve", y el formulario muestra la
   misma frase antes de guardar. No lo saques: sin eso la fila solo decía el
