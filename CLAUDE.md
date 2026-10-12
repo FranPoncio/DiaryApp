@@ -109,6 +109,18 @@ que esto es un problema del build local nada más: no hay nada que arreglar ahí
   anteriores a su llegada y le daba al pagador más de lo que gastó. El arreglo
   vive en la misma `0010_reparto_parejo.sql`. Si tocás esas vistas, no saques la
   condición de fecha.
+- **Identidad visual: oscura y eléctrica, nada cálido.** Los colores viven en
+  `:root` de `src/styles.css`. Dos de ellos significan plata y no se reusan para
+  otra cosa: **menta = te deben, rosa (`--alerta`) = debés**, y la tarjeta
+  grande de saldo cambia de color según eso. `--marca` (violeta) es solo la
+  marca; lo urgente o negativo usa `--alerta`. Los colores de las categorías de
+  fábrica están en `RUBROS` (`src/lib/gastos`) y en la migración 0012: si
+  cambia uno, cambia el otro. La barra del sistema y la PWA tienen el color
+  repetido en `index.html` y `manifest.webmanifest`.
+- **Cada gasto dice quién le debe a quién.** `efectoEnMi()` (con tests) saca de
+  cada fila "Eve te debe $X" o "Le debés $X a Eve", y el formulario muestra la
+  misma frase antes de guardar. No lo saques: sin eso la fila solo decía el
+  total y no se entendía de quién era la plata.
 - El login es por magic link. No hay contraseñas.
 - **Tener cuenta y estar en el grupo son cosas distintas.** El magic link crea
   el usuario solo, pero la RLS filtra por `miembros`. Se entra al grupo por una

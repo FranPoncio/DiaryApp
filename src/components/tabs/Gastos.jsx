@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   traerGastos, traerSaldosPorPar, cargarGasto, borrarGasto, actualizarGasto,
   saldarCuentas, sincronizarCola, cantidadEnCola, escucharCambios, rubroDe,
-  recurrentesFaltantes, cargarRecurrentes, deudasDe, textoSaldo,
+  recurrentesFaltantes, cargarRecurrentes, deudasDe, textoSaldo, efectoEnMi,
 } from "../../lib/gastos";
 import { plata, fechaCorta, hoyISO, rangoMes, sinAcentos, colorTexto } from "../../lib/formato";
 import { useDeshacer } from "../../lib/deshacer";
@@ -149,7 +149,9 @@ export default function Gastos({ contexto, autoAbrir = false }) {
         {/* Con dos personas el detalle repetiría el número grande; recién
             suma cuando hay que saber a quién cobrarle. */}
         {deudas.length === 1 && (
-          <button className="saldar" onClick={() => saldar(deudas[0])}>Saldar cuentas</button>
+          <button className="saldar" onClick={() => saldar(deudas[0])}>
+            {deudas[0].saldo > 0 ? `${deudas[0].alias} ya me pagó` : `Ya le pagué a ${deudas[0].alias}`}
+          </button>
         )}
         {deudas.length > 1 && (
           <ul className="deudas">
@@ -209,6 +211,13 @@ export default function Gastos({ contexto, autoAbrir = false }) {
             {items.map((g) => {
               const info = rubroDe(g.rubro, rubros);
               const mio = g.pagador_id === yo.user_id;
+              const efecto = efectoEnMi(g, yo.user_id);
+              // Con dos personas se nombra a la otra; con más, "te deben" a secas.
+              const otro = miembros.length === 2 ? miembros.find((m) => m.user_id !== yo.user_id) : null;
+              const textoEfecto =
+                efecto.tono === "favor" ? (otro ? `${otro.alias} te debe $${plata(efecto.monto)}` : `Te deben $${plata(efecto.monto)}`)
+                : efecto.tono === "debo" ? `Le debés $${plata(efecto.monto)} a ${alias(g.pagador_id)}`
+                : null;
               return (
                 <article key={g.id} className={`gasto ${g.pendiente ? "pend" : ""}`}
                   onClick={() => !g.pendiente && setEditando(g)}>
@@ -217,7 +226,8 @@ export default function Gastos({ contexto, autoAbrir = false }) {
                     <p className="gasto-d">{g.descripcion}</p>
                     <p className="gasto-m">
                       {mio ? "Pagaste vos" : `Pagó ${alias(g.pagador_id)}`}
-                      {g.split === "propio" && " · no se divide"}
+                      {textoEfecto && <> · <b className={`gasto-efecto ${efecto.tono}`}>{textoEfecto}</b></>}
+                      {efecto.tono === "cero" && g.tipo !== "ingreso" && " · no se divide"}
                       {g.moneda !== "NZD" && ` · ${g.monto} ${g.moneda}`}
                       {g.recibo_path && " · con foto"}
                       {g.pendiente && " · sin sincronizar"}
