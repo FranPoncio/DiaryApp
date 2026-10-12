@@ -3,7 +3,7 @@ import { crearRubro, editarRubro, borrarRubro } from "../lib/gastos";
 
 export default function EditarRubros({ grupo_id, rubros, onCerrar, onCambio }) {
   const [nuevoNombre, setNuevoNombre] = useState("");
-  const [nuevoColor, setNuevoColor] = useState("#5E7A18");
+  const [nuevoColor, setNuevoColor] = useState("#7C5CFF");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
 

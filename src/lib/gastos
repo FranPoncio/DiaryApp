@@ -112,6 +112,24 @@ export function deudasDe(pares, yo_id, miembros) {
     .sort((a, b) => Math.abs(b.saldo) - Math.abs(a.saldo));
 }
 
+/* Qué le pasa a `yo_id` con UN gasto, en el mismo sentido que el saldo de
+   arriba: "te deben" si pagó él, "debés" si pagó otro, nada si no se divide.
+   `deuda` es lo que le toca a CADA uno de los otros, así que cuando pagó él lo
+   que le deben es esa parte por cada uno de los demás (`partes` - 1). Sin esta
+   línea la fila decía "Pagaste vos" y el monto total, y no había forma de saber
+   cuánto de eso era plata de otro. */
+export function efectoEnMi(gasto, yo_id) {
+  const deuda = Number(gasto.deuda) || 0;
+  if (gasto.tipo === "ingreso" || gasto.split === "propio" || deuda <= 0) {
+    return { tono: "cero", monto: 0 };
+  }
+  if (gasto.pagador_id === yo_id) {
+    const otros = Math.max(1, (Number(gasto.partes) || 2) - 1);
+    return { tono: "favor", monto: +(deuda * otros).toFixed(2) };
+  }
+  return { tono: "debo", monto: deuda };
+}
+
 /* Resumen en una línea para Hoy y Resumen, donde no entra la lista completa.
    Con dos personas dice lo de siempre ("Le debés a Eve"); con más muestra el
    neto y el detalle queda en Gastos, que es donde se saldan las cuentas. */
@@ -327,14 +345,14 @@ export function escucharCambios(grupo_id, alCambiar) {
    se queda sin categorías para mostrar. La lista real y editable por grupo
    vive en la tabla `rubros` (ver traerRubros más abajo). */
 export const RUBROS = [
-  { id: "casa", nombre: "Casa", color: "#B8541F" },
-  { id: "comida", nombre: "Comida", color: "#02836F" },
-  { id: "estudio", nombre: "Estudio", color: "#B98418" },
-  { id: "tramites", nombre: "Trámites", color: "#7A5091" },
-  { id: "salidas", nombre: "Salidas", color: "#7A9A2E" },
-  { id: "transporte", nombre: "Transporte", color: "#AD4F5E" },
-  { id: "setup", nombre: "Setup", color: "#3A6FD1" },
-  { id: "otros", nombre: "Otros", color: "#A63D33" },
+  { id: "casa", nombre: "Casa", color: "#7C5CFF" },
+  { id: "comida", nombre: "Comida", color: "#1FD6A4" },
+  { id: "estudio", nombre: "Estudio", color: "#3DA5FF" },
+  { id: "tramites", nombre: "Trámites", color: "#C86BFF" },
+  { id: "salidas", nombre: "Salidas", color: "#FF4FA3" },
+  { id: "transporte", nombre: "Transporte", color: "#22D3EE" },
+  { id: "setup", nombre: "Setup", color: "#5B7CFF" },
+  { id: "otros", nombre: "Otros", color: "#8B97B8" },
 ];
 
 export const rubroDe = (id, rubros = RUBROS) =>

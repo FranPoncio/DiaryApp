@@ -109,6 +109,25 @@ que esto es un problema del build local nada más: no hay nada que arreglar ahí
   anteriores a su llegada y le daba al pagador más de lo que gastó. El arreglo
   vive en la misma `0010_reparto_parejo.sql`. Si tocás esas vistas, no saques la
   condición de fecha.
+- **Paletas de colores, elegibles por celular.** Hay siete (Eléctrico, Océano,
+  Lima, Noche, Claro, Marea, Kiwi). La de fábrica, Eléctrico, vive en `:root` de
+  `src/styles.css`; cada una de las otras es un bloque `html[data-tema="..."]`
+  que pisa solo lo que cambia. El nombre, las muestras y el color de la barra
+  del sistema están en `src/lib/temas.js`; la elección se guarda en
+  `localStorage` (`dbd:tema`) y un script en `index.html` la aplica antes de
+  que cargue React, para que no parpadee. Se cambia desde Resumen → Colores.
+  **Si agregás un token de color a `:root`, revisá que las paletas claras lo
+  pisen**: lo que se ve bien sobre fondo oscuro suele no alcanzar sobre claro.
+- **Dos colores significan plata y no se reusan para otra cosa:** el verde/menta
+  es "te deben" y el de alerta es "debés". La tarjeta grande de saldo cambia de
+  color según eso (`--grad-favor`, `--grad-debo`). `--marca` es solo la marca;
+  lo urgente o negativo usa `--alerta`. Los colores de las categorías de fábrica
+  están en `RUBROS` (`src/lib/gastos`) y en la migración 0012: si cambia uno,
+  cambia el otro. El color de la PWA está repetido en `manifest.webmanifest`.
+- **Cada gasto dice quién le debe a quién.** `efectoEnMi()` (con tests) saca de
+  cada fila "Eve te debe $X" o "Le debés $X a Eve", y el formulario muestra la
+  misma frase antes de guardar. No lo saques: sin eso la fila solo decía el
+  total y no se entendía de quién era la plata.
 - El login es por magic link. No hay contraseñas.
 - **Tener cuenta y estar en el grupo son cosas distintas.** El magic link crea
   el usuario solo, pero la RLS filtra por `miembros`. Se entra al grupo por una
@@ -116,6 +135,70 @@ que esto es un problema del build local nada más: no hay nada que arreglar ahí
   no tiene grupo, y esa función (security definer, migración 0011) le crea la
   fila en `miembros` si hay una invitación pendiente para su mail. La app no
   manda mails: la invitación es el permiso esperando.
+- **No podés sumar a alguien que nunca entró.** `miembros.user_id` apunta a
+  `auth.users`, y esa fila aparece sólo cuando la persona abre su magic link por
+  primera vez. Antes de eso no hay id al que apuntar: no es un permiso que
+  falte, es un dato que no existe. Cualquier plan que empiece con "cargale el
+  mail y listo" se choca con esto.
+
+## El SQL de esta base te va a hacer tropezar
+
+Escrito después de hacer fallar la misma migración cinco veces seguidas. Nada
+de esto es teoría.
+
+- **Mirá el esquema real antes de escribir SQL.** `gastos`, `miembros` y `pagos`
+  se crearon a mano al principio del proyecto y estuvieron sin versionar mucho
+  tiempo. La 0001 las reconstruye, pero está escrita *desde un dump de
+  `information_schema`*, no deducida del código. Deducirla del código es
+  exactamente el error que costó esas cinco corridas: los nombres de columna
+  salen bien y el mecanismo sale mal. Si no tenés acceso a la base, pedí el
+  dump antes de escribir una línea.
+- **El SQL Editor de Supabase no muestra los `RAISE NOTICE`.** Sólo te pinta el
+  resultado de la última consulta. Una migración puede dejar todo mal y salir
+  sin decir una palabra. Por eso la 0010 **termina con un `select`** que se
+  controla sola, con el valor esperado anotado al lado de cada columna. Si
+  escribís una migración que pueda salir mal en silencio, terminala igual.
+- **Tampoco muestra el `INSERT 0 1`.** A un insert le dice "Success. No rows
+  returned" y nada más, así que no hay forma de saber si escribió una fila o
+  ninguna. Ponele `returning` a cualquier insert que le vayas a pasar a alguien
+  para que corra.
+- **`monto_base` es una columna generada**, en `gastos` y en `pagos`. No se le
+  puede asignar nada desde un trigger, y se evalúa *después* del BEFORE trigger:
+  por eso `calcular_montos_gasto()` repite la conversión a base inline en vez de
+  leerla.
+- **`deuda` dejó de ser generada a propósito.** Depende de cuántos miembros hay,
+  que sale de contar otra tabla, y una generada sólo puede mirar su propia fila.
+- **Cambiarle el tipo a una columna recompila las `CHECK` que la miran.** Si
+  alguna tiene el cast al enum escrito adentro (`'propio'::split_tipo`), después
+  de convertir queda comparando `text` contra el enum y corta con un 42883,
+  "operator does not exist". La 0010 las busca todas, las guarda, las borra,
+  convierte y las vuelve a crear sin el cast.
+- **`gastos.rubro` sigue siendo un enum**, y la tabla `rubros` (0007) deja crear
+  categorías con la `clave` que se quiera. Crear un rubro desde la app y después
+  usarlo en un gasto va a fallar con el mismo 42883. **Es una bomba sin
+  desactivar**, anterior a todo esto. La receta es la misma que se usó con
+  `split`: enum → text con check.
+
+## Sumar a alguien a mano
+
+Cuando la persona ya tiene cuenta pero quedó afuera del grupo, esto la mete sin
+pasar por el flujo de invitación:
+
+```sql
+insert into miembros (grupo_id, user_id, alias, desde)
+select g.grupo_id, u.id, 'Nombre', current_date
+  from auth.users u
+  cross join (select grupo_id from miembros limit 1) g
+ where lower(u.email) = lower('elmail@ejemplo.com')
+   and not exists (
+     select 1 from miembros x
+      where x.grupo_id = g.grupo_id and x.user_id = u.id
+   )
+returning alias, desde;
+```
+
+`desde = current_date` es lo que hace que no herede los gastos anteriores a su
+llegada. Si devuelve la tabla vacía, ese mail no coincide con ninguna cuenta.
 
 ## Convenciones
 
@@ -125,6 +208,11 @@ que esto es un problema del build local nada más: no hay nada que arreglar ahí
   automático: mergear no publica nada, hay que correr `npm run deploy`. Las
   claves de Supabase se inlinean en tiempo de build, así que el `.env` local
   tiene que tener las reales en ese momento.
+- **El sitio viejo de Netlify sigue publicado.** Se sacó la config del repo,
+  pero la integración vive del lado de Netlify: `daybyday-nz.netlify.app` sigue
+  sirviendo una versión vieja y sigue construyendo previews de cada PR. Si
+  alguien reporta que la app "no tiene" algo que sí existe, preguntá qué URL
+  abrió antes de debuggear cualquier otra cosa.
 - **Sin router y sin librería de UI.** La navegación es estado en `App.jsx` y
   los estilos son CSS escrito a mano. Es deliberado.
 - **Tres dependencias de producción**: `react`, `react-dom` y
@@ -144,6 +232,51 @@ Francisco paga el consumo y las sesiones son largas.
 - Agrupá comandos independientes en una sola llamada.
 - Leé los archivos que necesites sin pedir permiso: cada ida y vuelta
   reenvía toda la conversación y sale más caro que abrir el archivo.
+
+## Cómo escribirle a Francisco
+
+Francisco no programa. Sabe perfectamente qué tiene que hacer la app y decide
+bien, pero la terminal, git y el dashboard de Supabase son territorio ajeno.
+Eso cambia cómo se dan las instrucciones, y hacerlo mal cuesta horas:
+
+- **Instrucciones completas, no fragmentos.** Bloques enteros para copiar y
+  pegar, con la carpeta desde dónde correrlos. Trabaja en **Windows con
+  PowerShell**: `ls` y `cp` funcionan, pero el output no se parece al de bash.
+- **Decile qué tiene que ver cuando sale bien**, no sólo qué escribir. "Tiene
+  que decir 454 kB" o "tienen que salir tres filas" convierte cada paso en algo
+  que él puede verificar sin vos. Sin eso, un paso que falló en silencio se
+  descubre tres pasos después.
+- **No des por sentado que un error salta a la vista.** Una banda roja en una
+  pantalla, un "0 rows" donde esperabas uno: si no le dijiste que mire eso, no
+  lo va a mirar, y con razón.
+- **Explicá la jerga la primera vez.** En esta sesión preguntó qué era un PR
+  después de que se lo mencioné veinte veces. Preguntó bien; el problema era
+  mío.
+- **Nunca le mandes un parche adivinando.** Cada ida y vuelta con una hipótesis
+  equivocada le quema tiempo y confianza. Antes: una consulta que distinga las
+  causas posibles, con una tabla de "si ves esto, es aquello". Eso resolvió en
+  una vuelta lo que cinco parches a ciegas no habían resuelto.
+- **Escribí las consultas de diagnóstico para que no muestren datos reales.**
+  Contadores y booleanos en vez de mails y montos: así puede pegar el resultado
+  sin pensarlo.
+
+## Problemas abiertos
+
+- **El flujo de invitación todavía no se estrenó de punta a punta.** En los
+  logs de Supabase no hay ni una llamada a `/rest/v1/invitaciones`: la pantalla
+  Invitar nunca se abrió contra la base real. Lo que se usó fue un `npm run
+  dev` (localhost:5173) sobre un clon anterior al merge, que no la tenía — 34
+  de las 36 llamadas de auth de ese día venían de ahí, y `auth_logs` guarda el
+  referer, así que es lo primero que hay que mirar. Los miembros se sumaron a
+  mano (ver arriba). Falta probarlo en serio desde la URL publicada.
+- **`traerContexto` se come el error de `aceptar_invitacion`.** Hace
+  `const { data } = await supabase.rpc(...)` y descarta el `error`, así que un
+  fallo de esa función se ve igual que "no te invitaron": el cartel genérico de
+  que no perteneces a ningún grupo. Eso es lo que volvió el problema de arriba
+  imposible de diagnosticar desde la app. Separar los tres casos —no hay
+  invitación / hay pero con otro mail / explotó— es la primera cosa a arreglar
+  si se vuelve a tocar esto.
+- **`gastos.rubro` es un enum** y choca con la tabla `rubros`. Ver arriba.
 
 ## Datos
 

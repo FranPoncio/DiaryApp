@@ -10,7 +10,10 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
-    <meta name="theme-color" content="#26211B" />
+    <meta name="theme-color" content="#0A0C16" />
+    <!-- El tema guardado se aplica acá, antes de que cargue React: si no, la app
+         arranca un instante en la paleta de fábrica y parpadea. -->
+    <script>try{var t=localStorage.getItem("dbd:tema");if(t)document.documentElement.dataset.tema=t}catch(e){}</script>
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calcularMontos, tasaDe, TASAS, deudasDe, textoSaldo, emailValido } from "./gastos";
+import { calcularMontos, tasaDe, TASAS, deudasDe, textoSaldo, emailValido, efectoEnMi } from "./gastos";
 import { rangoMes, toISO, hoyISO, parseISO, sumarDias } from "./formato";
 
 describe("calcularMontos", () => {
@@ -208,5 +208,44 @@ describe("emailValido", () => {
     for (const malo of ["", "alguien", "alguien@", "@mail.com", "alguien@mail", "a b@mail.com"]) {
       expect(emailValido(malo), malo).toBe(false);
     }
+  });
+});
+
+describe("efectoEnMi", () => {
+  const yo = "yo", ella = "ella";
+
+  it("si pagué yo en partes iguales entre dos, ella me debe su mitad", () => {
+    expect(efectoEnMi({ pagador_id: yo, split: "parejo", deuda: 50, partes: 2 }, yo))
+      .toEqual({ tono: "favor", monto: 50 });
+  });
+
+  it("si pagó ella, yo le debo mi mitad", () => {
+    expect(efectoEnMi({ pagador_id: ella, split: "parejo", deuda: 50, partes: 2 }, yo))
+      .toEqual({ tono: "debo", monto: 50 });
+  });
+
+  it("entre tres, cuando pagué yo me deben la parte de los dos", () => {
+    expect(efectoEnMi({ pagador_id: yo, split: "parejo", deuda: 30, partes: 3 }, yo))
+      .toEqual({ tono: "favor", monto: 60 });
+  });
+
+  it("entre tres, cuando pagó otro le debo solo mi parte", () => {
+    expect(efectoEnMi({ pagador_id: ella, split: "parejo", deuda: 30, partes: 3 }, yo))
+      .toEqual({ tono: "debo", monto: 30 });
+  });
+
+  it("un gasto que no se divide no mueve plata, pague quien pague", () => {
+    expect(efectoEnMi({ pagador_id: yo, split: "propio", deuda: 0, partes: 2 }, yo).tono).toBe("cero");
+    expect(efectoEnMi({ pagador_id: ella, split: "propio", deuda: 0, partes: 2 }, yo).tono).toBe("cero");
+  });
+
+  it("un ingreso no genera deuda", () => {
+    expect(efectoEnMi({ pagador_id: yo, tipo: "ingreso", split: "parejo", deuda: 10, partes: 2 }, yo).tono)
+      .toBe("cero");
+  });
+
+  it("una fila sin `partes` (recién cargada, sin sincronizar) cuenta como dos", () => {
+    expect(efectoEnMi({ pagador_id: yo, split: "parejo", deuda: 25 }, yo))
+      .toEqual({ tono: "favor", monto: 25 });
   });
 });

@@ -5,11 +5,13 @@ import { plata, MESES_LARGO, rangoMes } from "../../lib/formato";
 import { gastosACSV, bajarCSV } from "../../lib/csv";
 import EditarRubros from "../EditarRubros";
 import Invitar from "../Invitar";
+import ElegirTema from "../ElegirTema";
 
 export default function Resumen({ contexto, onRecargarContexto }) {
   const { grupo_id, miembros, rubros } = contexto;
   const [editandoRubros, setEditandoRubros] = useState(false);
   const [invitando, setInvitando] = useState(false);
+  const [eligiendoTema, setEligiendoTema] = useState(false);
   const hoy = new Date();
   const [anio, setAnio] = useState(hoy.getFullYear());
   const [mes, setMes] = useState(hoy.getMonth());
@@ -92,6 +94,15 @@ export default function Resumen({ contexto, onRecargarContexto }) {
 
   return (
     <div className="tab-resumen">
+      {/* Invitar estaba en el pie, entre dos links chicos, y nadie lo encontraba. */}
+      <div className="grupo-fila">
+        <span className="chico">{miembros.map((m) => m.alias).join(" · ")}</span>
+        <span className="grupo-acciones">
+          <button className="link" onClick={() => setEligiendoTema(true)}>Colores</button>
+          <button className="link" onClick={() => setInvitando(true)}>+ Invitar</button>
+        </span>
+      </div>
+
       <div className="periodo">
         {[["mes", "Mes"], ["anio", "Año"], ["todo", "Todo"]].map(([k, l]) => (
           <button key={k} className={`periodo-b ${modo === k ? "on" : ""}`} onClick={() => setModo(k)}>{l}</button>
@@ -188,8 +199,6 @@ export default function Resumen({ contexto, onRecargarContexto }) {
         <span>
           <button className="link" onClick={() => setEditandoRubros(true)}>Categorías</button>
           {" · "}
-          <button className="link" onClick={() => setInvitando(true)}>Invitar</button>
-          {" · "}
           <button className="link" onClick={() => supabase.auth.signOut()}>Cerrar sesión</button>
         </span>
       </footer>
@@ -198,6 +207,8 @@ export default function Resumen({ contexto, onRecargarContexto }) {
         <EditarRubros grupo_id={grupo_id} rubros={rubros}
           onCambio={onRecargarContexto} onCerrar={() => setEditandoRubros(false)} />
       )}
+
+      {eligiendoTema && <ElegirTema onCerrar={() => setEligiendoTema(false)} />}
 
       {invitando && (
         <Invitar grupo_id={grupo_id} miembros={miembros}

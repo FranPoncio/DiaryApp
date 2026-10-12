@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { tasaDe, subirRecibo, urlRecibo, actualizarGasto } from "../lib/gastos";
-import { hoyISO, colorTexto } from "../lib/formato";
+import { tasaDe, subirRecibo, urlRecibo, actualizarGasto, calcularMontos } from "../lib/gastos";
+import { hoyISO, colorTexto, plata } from "../lib/formato";
 
 /* Carga en tres toques: monto, rubro, quién pagó. Lo demás está detrás de
    "más opciones". Si recibe `gasto`, edita ese en vez de crear uno nuevo. */
@@ -29,6 +29,30 @@ export default function NuevoGasto({ contexto, gasto, onGuardar, onBorrar, onCer
   const [errorRecibo, setErrorRecibo] = useState("");
 
   const valido = Number(monto) > 0;
+
+  // Lo que va a pasar con la plata, dicho en una frase, antes de guardar. Con
+  // los botones solos ("Mitad", "No se divide") no se entendía quién le debía a
+  // quién: pesaba más la cuenta de cabeza que el texto.
+  const otros = miembros.filter((m) => m.user_id !== pagador);
+  const aliasDe = (id) => miembros.find((m) => m.user_id === id)?.alias || "?";
+  const vistaPrevia = (() => {
+    if (!valido) return null;
+    const { deuda } = calcularMontos(
+      { monto, tc_a_base: Number(tc) || 1, split, monto_exacto: Number(montoExacto) || 0 },
+      miembros.length
+    );
+    if (split === "propio" || deuda <= 0) {
+      return { tono: "cero", texto: "No se divide: nadie le debe nada a nadie." };
+    }
+    if (pagador === yo.user_id) {
+      const total = +(deuda * otros.length).toFixed(2);
+      return {
+        tono: "favor",
+        texto: otros.length === 1 ? `${otros[0].alias} te debe $${plata(total)}.` : `Te deben $${plata(total)} en total.`,
+      };
+    }
+    return { tono: "debo", texto: `Le debés $${plata(deuda)} a ${aliasDe(pagador)}.` };
+  })();
 
   const guardar = async () => {
     if (!valido || guardando) return;
@@ -119,13 +143,17 @@ export default function NuevoGasto({ contexto, gasto, onGuardar, onBorrar, onCer
         <input className="desc" value={descripcion} onChange={(e) => setDescripcion(e.target.value)}
           placeholder="Descripción (opcional)" />
 
+        {/* Fuera de "más opciones" a propósito: es la respuesta a "¿quién le debe a
+            quién?", y nadie abre un menú escondido para enterarse. */}
+        {vistaPrevia && <p className={`reparto-prev ${vistaPrevia.tono}`}>{vistaPrevia.texto}</p>}
+
         {mas && (
           <div className="extra">
             <label>Cómo se divide</label>
             <div className="quien-btns">
               {[
                 ["parejo", miembros.length > 2 ? "En partes iguales" : "Mitad"],
-                ["propio", "Es de quien pagó"],
+                ["propio", "No se divide"],
                 ["exacto", "Monto exacto"],
               ].map(([k, l]) => (
                 <button key={k} className={`quien-b ${split === k ? "on" : ""}`} onClick={() => setSplit(k)}>{l}</button>
@@ -133,7 +161,10 @@ export default function NuevoGasto({ contexto, gasto, onGuardar, onBorrar, onCer
             </div>
             {split === "exacto" && (
               <>
-                <label>{miembros.length > 2 ? "Le toca a cada uno de los otros" : "Le toca al otro"}</label>
+                <label>
+                  {miembros.length > 2 ? "Le toca a cada uno de los otros"
+                    : `Lo que le toca a ${miembros.find((m) => m.user_id !== pagador)?.alias || "la otra persona"}`}
+                </label>
                 <input type="number" inputMode="decimal" value={montoExacto}
                   onChange={(e) => setMontoExacto(e.target.value)} placeholder="0.00" />
               </>

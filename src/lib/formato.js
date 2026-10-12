@@ -62,5 +62,5 @@ const contraste = (a, b) => {
   const [hi, lo] = [luminancia(a), luminancia(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 };
-export const colorTexto = (fondo, oscuro = "#26211B", claro = "#FFFFFF") =>
+export const colorTexto = (fondo, oscuro = "#0A0C16", claro = "#FFFFFF") =>
   contraste(claro, fondo) >= contraste(oscuro, fondo) ? claro : oscuro;

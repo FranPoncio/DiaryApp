@@ -136,7 +136,7 @@ export default function Hoy({ contexto, onIrA, onCargarGasto }) {
         </div>
       )}
 
-      <button className="accion-rapida" onClick={onCargarGasto}>+ Cargar gasto</button>
+      <button className="fab" onClick={onCargarGasto} aria-label="Cargar gasto">+</button>
 
       {fijos.length > 0 && (
         <div className="aviso-fijos">
