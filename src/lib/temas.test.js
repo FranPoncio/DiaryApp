@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { TEMAS, TEMA_INICIAL, temaValido } from "./temas";
+import { TEMAS, TEMA_INICIAL, temaValido, FUENTES, FUENTE_INICIAL, fuenteValida } from "./temas";
 
 describe("temas", () => {
   it("un id conocido se respeta", () => {
@@ -23,5 +23,23 @@ describe("temas", () => {
       expect(t.muestras).toHaveLength(3);
       expect(t.barra).toMatch(/^#[0-9A-Fa-f]{6}$/);
     }
+  });
+});
+
+describe("fuentes", () => {
+  it("un id conocido se respeta y uno que no existe cae en el de fábrica", () => {
+    expect(fuenteValida("sora")).toBe("sora");
+    expect(fuenteValida("comic")).toBe(FUENTE_INICIAL);
+    expect(fuenteValida(null)).toBe(FUENTE_INICIAL);
+  });
+
+  it("no hay ids repetidos y la de fábrica está en la lista", () => {
+    const ids = FUENTES.map((f) => f.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toContain(FUENTE_INICIAL);
+  });
+
+  it("el nombre para pedirla a Google no lleva espacios sueltos", () => {
+    for (const f of FUENTES) expect(f.css).not.toMatch(/\s/);
   });
 });

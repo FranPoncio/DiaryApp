@@ -98,7 +98,7 @@ export default function Resumen({ contexto, onRecargarContexto }) {
       <div className="grupo-fila">
         <span className="chico">{miembros.map((m) => m.alias).join(" · ")}</span>
         <span className="grupo-acciones">
-          <button className="link" onClick={() => setEligiendoTema(true)}>Colores</button>
+          <button className="link" onClick={() => setEligiendoTema(true)}>Estilo</button>
           <button className="link" onClick={() => setInvitando(true)}>+ Invitar</button>
         </span>
       </div>

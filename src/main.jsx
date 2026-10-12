@@ -1,6 +1,11 @@
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { aplicarFuente, fuenteGuardada } from './lib/temas.js'
+
+/* La fuente se pide a Google apenas arranca, antes de dibujar: el tema de
+   colores ya lo dejó puesto el script de index.html. */
+aplicarFuente(fuenteGuardada())
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <ErrorBoundary>

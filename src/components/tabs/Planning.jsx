@@ -6,6 +6,7 @@ import {
 import { sinAcentos } from "../../lib/formato";
 import { useDeshacer } from "../../lib/deshacer";
 import NuevaTarea from "../NuevaTarea";
+import Ideas from "../Ideas";
 import TarjetaTarea from "../TarjetaTarea";
 import Toast from "../Toast";
 import Calendario from "./Calendario";
@@ -18,6 +19,7 @@ export default function Planning({ contexto }) {
   const [vista, setVista] = useState("tablero"); // tablero | calendario
   const [busqueda, setBusqueda] = useState("");
   const [abrirNueva, setAbrirNueva] = useState(false);
+  const [abrirIdeas, setAbrirIdeas] = useState(false);
   const [desplegado, setDesplegado] = useState({});
   const [error, setError] = useState("");
   const { pendiente, pedir, deshacer } = useDeshacer();
@@ -59,7 +61,11 @@ export default function Planning({ contexto }) {
     try {
       const fila = await agregarTarea(t);
       setTareas((prev) => [...prev, fila]);
-    } catch (e) { setError(`No se pudo crear la tarea: ${e.message}`); }
+      return true;
+    } catch (e) {
+      setError(`No se pudo crear la tarea: ${e.message}`);
+      return false;
+    }
   };
 
   const cambiarEstado = async (id, estado) => {
@@ -120,6 +126,7 @@ export default function Planning({ contexto }) {
         {[["tablero", "Tablero"], ["calendario", "Calendario"]].map(([k, l]) => (
           <button key={k} className={`periodo-b ${vista === k ? "on" : ""}`} onClick={() => setVista(k)}>{l}</button>
         ))}
+        <button className="periodo-b ideas-b" onClick={() => setAbrirIdeas(true)}>Ideas</button>
       </div>
 
       {error && <p className="error banda">{error}</p>}
@@ -182,6 +189,11 @@ export default function Planning({ contexto }) {
       )}
 
       <button className="fab" onClick={() => setAbrirNueva(true)} aria-label="Nueva tarea">+</button>
+
+      {abrirIdeas && (
+        <Ideas grupo_id={grupo_id} fechaLlegada={grupo.fecha_llegada} tareas={tareas}
+          onAgregar={guardarTarea} onCerrar={() => setAbrirIdeas(false)} />
+      )}
 
       {abrirNueva && (
         <NuevaTarea contexto={contexto} onGuardar={guardarTarea} onCerrar={() => setAbrirNueva(false)} />
