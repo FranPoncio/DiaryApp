@@ -128,6 +128,15 @@ que esto es un problema del build local nada más: no hay nada que arreglar ahí
   cada fila "Eve te debe $X" o "Le debés $X a Eve", y el formulario muestra la
   misma frase antes de guardar. No lo saques: sin eso la fila solo decía el
   total y no se entendía de quién era la plata.
+- **Ideas para el plan: un catálogo, no filas en la base.** `src/lib/ideas.js` tiene
+  tareas que conviene sumar (trabajo y sponsor, asentarse, conocer y disfrutar),
+  cada una con el día de la llegada en que sirve. Plan → Ideas las muestra, con
+  "Conviene ahora" ordenado por prioridad y por cuándo se abre, y al agregarlas
+  pasan a ser filas comunes de `plan_tareas` con fecha (la ideal, o hoy si ya pasó).
+  Para sumar una idea basta con agregarla al catálogo; los tests exigen que no
+  repita ningún título del plan de fábrica (`BASE`) ni de otra idea. **Las que
+  dependen de reglas migratorias no inventan requisitos ni montos**: mandan a
+  confirmar en immigration.govt.nz, porque esas reglas cambian.
 - **Tipografía elegible, como los colores.** Seis fuentes en `FUENTES`
   (`src/lib/temas.js`), por celular (`dbd:fuente`). Se piden a Google Fonts solo
   las que se usan; `--fuente` en `:root` es Geist.
@@ -265,6 +274,10 @@ Eso cambia cómo se dan las instrucciones, y hacerlo mal cuesta horas:
 
 ## Problemas abiertos
 
+- **Hay una Edge Function `chat` desplegada en Supabase que no está en el repo.**
+  Se probó un chat con Claude y se descartó; la función quedó arriba, inerte (exige
+  sesión y sin `ANTHROPIC_API_KEY` contesta "no configurado"). Borrarla desde
+  Supabase → Edge Functions cuando se pueda.
 - **El flujo de invitación todavía no se estrenó de punta a punta.** En los
   logs de Supabase no hay ni una llamada a `/rest/v1/invitaciones`: la pantalla
   Invitar nunca se abrió contra la base real. Lo que se usó fue un `npm run

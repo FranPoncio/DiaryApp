@@ -47,7 +47,7 @@ export const PRIORIDADES = [
 
 /* Semilla: se cargan una sola vez, la primera vez que abrís el Plan.
    Después son filas comunes: las movés, las borrás, agregás las tuyas. */
-const BASE = [
+export const BASE = [
   ["pre", -22, 1, "Releer el PDF de la visa", "Anotar la fecha límite de primera entrada y las condiciones de empleo: cuánto podés trabajar con un mismo empleador y el tope de 6 meses de estudio.", null],
   ["pre", -22, 1, "Verificar el pasaporte", "Necesita al menos 15 meses de validez desde la fecha de entrada a Nueva Zelanda.", null],
   ["pre", -20, 1, "Anotar el INZ number y el CUIL", "El número de aplicación está en el asunto del mail de aprobación. Son los dos datos que piden para el IRD.", null],
