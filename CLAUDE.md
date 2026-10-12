@@ -128,6 +128,9 @@ que esto es un problema del build local nada más: no hay nada que arreglar ahí
   cada fila "Eve te debe $X" o "Le debés $X a Eve", y el formulario muestra la
   misma frase antes de guardar. No lo saques: sin eso la fila solo decía el
   total y no se entendía de quién era la plata.
+- **Tipografía elegible, como los colores.** Seis fuentes en `FUENTES`
+  (`src/lib/temas.js`), por celular (`dbd:fuente`). Se piden a Google Fonts solo
+  las que se usan; `--fuente` en `:root` es Geist.
 - El login es por magic link. No hay contraseñas.
 - **Tener cuenta y estar en el grupo son cosas distintas.** El magic link crea
   el usuario solo, pero la RLS filtra por `miembros`. Se entra al grupo por una

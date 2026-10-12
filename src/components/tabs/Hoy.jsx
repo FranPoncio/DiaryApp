@@ -11,9 +11,11 @@ import { useDeshacer } from "../../lib/deshacer";
 import TarjetaTarea from "../TarjetaTarea";
 import Toast from "../Toast";
 import RubroAvatar from "../RubroAvatar";
+import ElegirTema from "../ElegirTema";
 
 export default function Hoy({ contexto, onIrA, onCargarGasto }) {
   const { grupo_id, miembros, yo, rubros } = contexto;
+  const [estiloAbierto, setEstiloAbierto] = useState(false);
   const [tareas, setTareas] = useState([]);
   const [gastos, setGastos] = useState([]);
   const [pares, setPares] = useState([]);
@@ -109,6 +111,16 @@ export default function Hoy({ contexto, onIrA, onCargarGasto }) {
 
   return (
     <div className="tab-hoy">
+      {/* Flota sobre la pantalla principal: es una preferencia, no un registro de
+          datos, así que no compite con el + de cargar gasto. */}
+      <button className="flota flota-estilo" onClick={() => setEstiloAbierto(true)} aria-label="Cambiar colores y tipografía">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8.1-9-8.1z" />
+          <circle cx="7.5" cy="11" r="1" /><circle cx="10.5" cy="7" r="1" /><circle cx="15" cy="7.5" r="1" />
+        </svg>
+      </button>
+      {estiloAbierto && <ElegirTema onCerrar={() => setEstiloAbierto(false)} />}
+
       {error && <p className="error banda">{error}</p>}
 
       <button className={`saldo-hoy ${resumen.tono} ${resumen.monto == null ? "compacto" : ""}`}
