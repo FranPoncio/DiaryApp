@@ -27,6 +27,10 @@ describe("el catálogo", () => {
     }
   });
 
+  it("ningún tema queda vacío", () => {
+    for (const tema of TEMAS_IDEAS) expect(IDEAS.some((i) => i.tema === tema.id), tema.id).toBe(true);
+  });
+
   it("los links son de sitios reales y seguros", () => {
     for (const i of IDEAS.filter((x) => x.link)) expect(i.link).toMatch(/^https:\/\//);
   });
@@ -76,6 +80,11 @@ describe("ideasAhora", () => {
       const a = r[k - 1], b = r[k];
       expect(a.prioridad < b.prioridad || (a.prioridad === b.prioridad && a.dia <= b.dia)).toBe(true);
     }
+  });
+  it("el primer día, lo primero es juntar la prueba de la experiencia", () => {
+    const titulos = ideasAhora(IDEAS, [], 0).map((i) => i.titulo);
+    expect(titulos[0]).toBe("Juntar los comprobantes de tus años de obra");
+    expect(titulos[1]).toBe("Pedir cartas a las empresas donde trabajaste");
   });
   it("respeta el máximo", () => {
     expect(ideasAhora(IDEAS, [], 300, 3)).toHaveLength(3);
